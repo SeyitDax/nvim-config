@@ -5,12 +5,22 @@ return {
 		"williamboman/mason-lspconfig.nvim",
 		"hrsh7th/nvim-cmp",
 		"hrsh7th/cmp-nvim-lsp",
+		"Hoffs/omnisharp-extended-lsp.nvim",
 	},
 	config = function()
 		require("mason").setup()
 		require("mason-lspconfig").setup({
 			ensure_installed = { "omnisharp" },
 		})
+
+		-- OmniSharp v1.39.9+ has a regression in its background diagnostics
+		-- worker (thread-unsafe Queue.Enqueue in its analyzer status
+		-- notifications) that corrupts the JSON-RPC stream and shows up here
+		-- as "LSP[omnisharp]: Error INVALID_SERVER_MESSAGE: nil". Confirmed via
+		-- lsp.log stack trace; matches https://github.com/OmniSharp/omnisharp-roslyn/issues/2574
+		-- and https://github.com/neovim/neovim/issues/27395. Pinned to
+		-- v1.39.8 (last known-good) via `:MasonInstall omnisharp@v1.39.8` —
+		-- do NOT `:MasonUpdateAll` this package.
 
 		local capabilities = require("cmp_nvim_lsp").default_capabilities()
 		
@@ -58,9 +68,16 @@ return {
 				   -- group names and throw E5248 on every edit, causing lag.
 				   client.server_capabilities.semanticTokensProvider = nil
 			   end
-			
+
 			   vim.keymap.set("i", "<C-k>", vim.lsp.buf.signature_help, opts)
-			   vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+			   if client and client.name == "omnisharp" then
+				   -- Native textDocument/definition can't resolve decompiled
+				   -- BCL/NuGet symbols and crashes with "Cursor position
+				   -- outside buffer"; omnisharp-extended-lsp handles that flow.
+				   vim.keymap.set("n", "gd", require("omnisharp_extended").lsp_definition, opts)
+			   else
+				   vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+			   end
 			   vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
 			   vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
 			   vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
