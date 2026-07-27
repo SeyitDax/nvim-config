@@ -48,6 +48,5 @@ return {
 
 	vim.keymap.set("n", "<leader>\"", function() toggle_independent(bottom_term) end, { desc = "Terminal bottom" })
 	vim.keymap.set("n", "<leader>tr", function() toggle_independent(right_term, 70) end, { desc = "Terminal right" })
-	vim.keymap.set("t", "<esc>", [[<C-\><C-n>]], { desc = "Exit terminal mode" })
 	end,
 }
