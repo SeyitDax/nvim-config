@@ -4,6 +4,13 @@ return {
 	config = function()
 		local cmp = require("cmp")
 		require("luasnip.loaders.from_vscode").lazy_load()
+
+		-- Must be set before cmp.setup() below: cmp's own <S-Tab> mapping
+		-- falls back to whatever was mapped here when the popup menu isn't
+		-- visible, so this is what runs on a plain Shift-Tab dedent.
+		vim.keymap.set("i", "<S-Tab>", "<C-d>", { desc = "Dedent line" })
+		vim.keymap.set("v", "<S-Tab>", "<gv", { desc = "Dedent selection" })
+
 		cmp.setup({
 			snippet = {
 				expand = function(args)
